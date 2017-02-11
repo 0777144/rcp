@@ -1,20 +1,14 @@
 #! /usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const exec = require('child_process').exec;
-
 const program = require('commander');
-const colors = require('colors');
-const ncp = require('ncp').ncp;
 
-ncp.limit = 16;
-
-const USAGE = '[options] source target [./path]';
+const readdir = require('./readdir');
+const copyORmkdir = require('./copyORmkdir');
+const {textRed, textGreen, exit} = require('./helpers');
 
 program
     .version('0.0.1')
-    .usage(USAGE)
+    .usage('[options] source target [./path]')
     .option('-p, --print', 'Show how the files would be copied, but don\'t actually do anything.')
     .option('-v, --verbose', 'Print additional information about the operations (not) executed.')
     .parse(process.argv);
@@ -22,68 +16,61 @@ program
 const source = program.args[0];
 const target = program.args[1];
 const dir = program.args[2] || './';
+const matchRE = new RegExp(source, 'g');
 
 if (program.args.length < 2) {
-    console.log('Error missing arguments!'.red);
-    program.outputHelp(make_red);
+    console.log(textRed('Error missing arguments!'));
+    program.outputHelp(textRed);
     process.exit(1);
 }
 
-function make_red(txt) {
-    return colors.red(txt);
-}
+readdir(dir, (err, files) => {
+    if (err) {
+        console.log(err);
+    }
 
-const matchRE = new RegExp(source, 'g');
+    if (!files.length) {
+        console.log(textRed(`Files not found in path '${dir}'!`));
+        process.exit(1);
+    }
 
-const errHandler = function (err, stdout, stderr) {
-    if (err) console.log(err, stdout, stderr);
-};
+    files.forEach(file => {
+        let source = file;
+        let destination = file.replace(matchRE, target);
 
-const isDir = (path) => fs.statSync(path).isDirectory();
-const exists = (path) => fs.existsSync(path);
-const mkdir = (path) => fs.mkdirSync(path);
+        if (file.match(matchRE)) {
+            if (!program.print) {
+                copyORmkdir(source, destination, err => {
+                    if (err) {
+                        if (err.code === 'EEXIST') {
+                            exit(`Directory ${destination} already exists.`);
+                        }
 
-const readdirSync = function(dir, filelist) {
-    filelist = filelist || [];
+                        console.log(err);
+                    }
 
-    let files = fs.readdirSync(dir);
-
-    files.forEach(function (file) {
-        let filepath = path.join(dir, file);
-
-        filelist.push(filepath);
-
-        if (isDir(filepath)) {
-            readdirSync(filepath, filelist);
+                    if (program.verbose) {
+                        console.log(textGreen(source), 'copied to', textGreen(destination));
+                    }
+                });
+            } else {
+                if (program.verbose) {
+                    console.log(textGreen(source), 'would be copied to', textGreen(destination));
+                }
+            }
+        } else {
+            if (program.verbose) {
+                console.log(`${source} unchanged`);
+            }
         }
     });
 
-    return filelist;
-};
-
-const copy = function (source, destination) {
-    if (isDir(source) && !exists(destination)) {
-        mkdir(destination);
-    } if (!exists(destination)) {
-        // ncp(source, destination, errHandler);
-        ncp(source, destination);
-    }
-};
-
-console.log(`'${source}' would be copy to '${target}' in path '${dir}' `);
-
-let files = readdirSync(dir);
-
-files.forEach(function (file) {
-    let source = file;
-    let destination = file.replace(matchRE, target);
-
-    if (file.match(matchRE)) {
-        if (program.verbose || program.print) console.log(`'${source}' would be renamed to '${destination}'`.green);
-
-        if (!program.print) copy(source, destination);
-    } else {
-        if (program.verbose) console.log(`'${source}' unchanged`);
+    if (!program.verbose) {
+        if (!program.print) {
+            console.log(textGreen(source), 'copied to', textGreen(target), 'in path', textGreen(dir));
+        }
+        if (!program.verbose && program.print) {
+            console.log(textGreen(source), 'would be copied to', textGreen(target), 'in path', textGreen(dir));
+        }
     }
 });
-
