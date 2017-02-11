@@ -78,7 +78,7 @@ files.forEach(function (file) {
     let source = file;
     let destination = file.replace(matchRE, target);
 
-    if (matchRE.test(file)) {
+    if (file.match(matchRE)) {
         if (program.verbose || program.print) console.log(`'${source}' would be renamed to '${destination}'`.green);
 
         if (!program.print) copy(source, destination);
