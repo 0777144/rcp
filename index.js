@@ -63,11 +63,11 @@ let files = readdirSync(dir);
 let filesToDelete = [];
 
 files.forEach(function (file) {
+    let source = file;
+    let destination = file.replace(matchRE, newname);
+
     if (matchRE.test(file)) {
         filesToDelete.push(file);
-
-        let source = file;
-        let destination = file.replace(matchRE, newname);
 
         if (program.verbose || program.print) console.log(`'${source}' would be renamed to '${destination}'`.green);
 
@@ -77,5 +77,3 @@ files.forEach(function (file) {
     }
 });
 
-// exec('rm -rf ' + filesToDelete.shift(), errHandler);
-// exec('rm -rf ' + filesToDelete.shift());
