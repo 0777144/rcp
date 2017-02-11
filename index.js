@@ -10,17 +10,30 @@ const ncp = require('ncp').ncp;
 
 ncp.limit = 16;
 
+const USAGE = '[options] source target [./path]';
+
 program
     .version('0.0.1')
+    .usage(USAGE)
     .option('-p, --print', 'Show how the files would be renamed, but don\'t actually do anything.')
     .option('-v, --verbose', 'Print additional information about the operations (not) executed.')
     .parse(process.argv);
 
-const dir = program.args[0];
-const oldname = program.args[1];
-const newname = program.args[2];
+const source = program.args[0];
+const target = program.args[1];
+const dir = program.args[2] || './';
 
-const matchRE = new RegExp(oldname, 'g');
+if (program.args.length < 2) {
+    console.log('Error missing arguments!'.red);
+    program.outputHelp(make_red);
+    process.exit(1);
+}
+
+function make_red(txt) {
+    return colors.red(txt);
+}
+
+const matchRE = new RegExp(source, 'g');
 
 const errHandler = function (err, stdout, stderr) {
     if (err) console.log(err, stdout, stderr);
@@ -57,14 +70,14 @@ const copy = function (source, destination) {
     }
 };
 
-console.log(`'${oldname}' would be renamed to '${newname}' in path '${dir}' `);
+console.log(`'${source}' would be copy to '${target}' in path '${dir}' `);
 
 let files = readdirSync(dir);
 let filesToDelete = [];
 
 files.forEach(function (file) {
     let source = file;
-    let destination = file.replace(matchRE, newname);
+    let destination = file.replace(matchRE, target);
 
     if (matchRE.test(file)) {
         filesToDelete.push(file);
