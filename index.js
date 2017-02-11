@@ -73,15 +73,12 @@ const copy = function (source, destination) {
 console.log(`'${source}' would be copy to '${target}' in path '${dir}' `);
 
 let files = readdirSync(dir);
-let filesToDelete = [];
 
 files.forEach(function (file) {
     let source = file;
     let destination = file.replace(matchRE, target);
 
     if (matchRE.test(file)) {
-        filesToDelete.push(file);
-
         if (program.verbose || program.print) console.log(`'${source}' would be renamed to '${destination}'`.green);
 
         if (!program.print) copy(source, destination);
