@@ -15,7 +15,7 @@ const USAGE = '[options] source target [./path]';
 program
     .version('0.0.1')
     .usage(USAGE)
-    .option('-p, --print', 'Show how the files would be renamed, but don\'t actually do anything.')
+    .option('-p, --print', 'Show how the files would be copied, but don\'t actually do anything.')
     .option('-v, --verbose', 'Print additional information about the operations (not) executed.')
     .parse(process.argv);
 
